@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>BubuRog — Build</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Open+Sans:wght@400;600;700&display=swap');
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: transparent;
+      width: 350px;
+      height: 200px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      padding: 6px 8px;
+    }
+    #container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 100%;
+      height: 188px;
+      background: rgba(0, 0, 0, 0.75);
+      border-left: 3px solid #8b0000;
+      border-radius: 0 4px 4px 0;
+      padding: 12px 16px;
+      justify-content: center;
+    }
+    #build-label {
+      font-family: 'Cinzel', serif;
+      font-size: 13px;
+      color: #9146ff;
+      letter-spacing: 2px;
+      white-space: nowrap;
+    }
+    #build-name-en {
+      font-family: 'Cinzel', serif;
+      font-size: 20px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-shadow: 0 0 10px currentColor;
+    }
+    #build-name-fr {
+      font-family: 'Open Sans', sans-serif;
+      font-size: 14px;
+      color: #aaa;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-style: italic;
+    }
+    #build-info-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-top: 4px;
+    }
+    .tag {
+      font-family: 'Open Sans', sans-serif;
+      font-size: 12px;
+      padding: 3px 10px;
+      border-radius: 2px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .tag-class {
+      background: rgba(139, 0, 0, 0.3);
+      color: #cc4444;
+      border: 1px solid #8b0000;
+    }
+    .tag-hc {
+      background: rgba(212, 168, 48, 0.15);
+      color: #d4a830;
+      border: 1px solid #d4a830;
+    }
+    .tag-sc {
+      background: rgba(68, 136, 204, 0.15);
+      color: #4488cc;
+      border: 1px solid #4488cc;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="build-label">⚔ CURRENT BUILD · BUILD ACTUEL</div>
+    <div id="build-name-en">—</div>
+    <div id="build-name-fr">—</div>
+    <div id="build-info-row">
+      <span class="tag tag-class" id="tag-class">ROGUE</span>
+      <span class="tag" id="tag-mode">HARDCORE</span>
+    </div>
+  </div>
+  <script>
+    const JWT_TOKEN  = "TON_JWT_TOKEN_ICI";  // StreamElements → Mon compte → Jetons d'accès
+    const CHANNEL_ID = "TON_CHANNEL_ID_ICI"; // StreamElements → Mon compte → ID de chaîne
+    const REFRESH_INTERVAL = 5000;
+    const builds = {
+      "PTB": { en: "Poison Twisting Blades", fr: "Lames sournoises empoisonnées", classe: "ROGUE", mode: "HC", color: "#44cc44" },
+      "DT":  { en: "Death Trap",             fr: "Pièges mortels",                classe: "ROGUE", mode: "HC", color: "#9146ff" },
+      "PS":  { en: "Penetrating Shot",        fr: "Tir pénétrant",                classe: "ROGUE", mode: "HC", color: "#4488cc" },
+      "RF":  { en: "Rapid Fire",              fr: "Tir rapide",                   classe: "ROGUE", mode: "HC", color: "#00ccff" },
+      "ROA": { en: "Rain of Arrows",           fr: "Pluie de Flèches",             classe: "ROGUE", mode: "HC", color: "#ff8c00" }
+    };
+    const nameEnEl = document.getElementById("build-name-en");
+    const nameFrEl = document.getElementById("build-name-fr");
+    const tagClass = document.getElementById("tag-class");
+    const tagMode  = document.getElementById("tag-mode");
+    const container = document.getElementById("container");
+    function updateBuild(key) {
+      const b = builds[key];
+      if (!b) return;
+      nameEnEl.textContent = b.en;
+      nameEnEl.style.color = b.color;
+      nameFrEl.textContent = b.fr;
+      tagClass.textContent = b.classe;
+      tagMode.textContent  = b.mode === "HC" ? "⚠ HARDCORE" : "SOFTCORE";
+      tagMode.className    = "tag " + (b.mode === "HC" ? "tag-hc" : "tag-sc");
+      container.style.borderLeftColor = b.color;
+    }
+    async function fetchBuild() {
+      try {
+        const url = `https://api.streamelements.com/kappa/v2/bot/${CHANNEL_ID}/counters/currentbuild`;
+        const response = await fetch(url, { headers: { "Authorization": `Bearer ${JWT_TOKEN}`, "Accept": "application/json" } });
+        if (!response.ok) return;
+        const data = await response.json();
+        const value = data.value ?? data.counter ?? data.count ?? null;
+        if (value !== null) {
+          const keys = ["PTB", "DT", "PS", "RF", "ROA"];
+          const key = keys[value - 1];
+          if (key) updateBuild(key);
+        }
+      } catch (err) { console.error("Erreur :", err); }
+    }
+    updateBuild("DT");
+    fetchBuild();
+    setInterval(fetchBuild, REFRESH_INTERVAL);
+  </script>
+</body>
+</html>

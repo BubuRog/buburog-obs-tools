@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>BubuRog — Death Counter</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=Open+Sans:wght@700&display=swap');
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 200px;
+      height: 200px;
+      overflow: hidden;
+      padding: 6px;
+    }
+    #container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 188px;
+      height: 188px;
+      background: rgba(0, 0, 0, 0.75);
+      border-left: 3px solid #8b0000;
+      border-radius: 0 4px 4px 0;
+      gap: 4px;
+      padding: 8px;
+    }
+    #label {
+      font-family: 'Cinzel', serif;
+      font-size: 13px;
+      color: #cc2222;
+      letter-spacing: 2px;
+      text-align: center;
+      white-space: nowrap;
+      text-shadow: 0 0 6px #8b0000;
+    }
+    #death-image {
+      width: 130px;
+      height: 133px;
+      image-rendering: crisp-edges;
+      image-rendering: -webkit-optimize-contrast;
+      opacity: 1;
+      transition: opacity 0.4s ease;
+    }
+    /* Animation flash rouge au changement */
+    @keyframes flash {
+      0%   { box-shadow: 0 0 0px #cc0000; }
+      50%  { box-shadow: 0 0 30px #cc0000; }
+      100% { box-shadow: 0 0 0px #cc0000; }
+    }
+    #container.flash { animation: flash 0.6s ease; }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="label">✝ DEATHS · MORTS 💀</div>
+    <img id="death-image" src="" alt="Death counter" />
+  </div>
+  <script>
+    const JWT_TOKEN      = "TON_JWT_TOKEN_ICI";      // StreamElements → Mon compte → Jetons d'accès
+    const CHANNEL_ID     = "TON_CHANNEL_ID_ICI";     // StreamElements → Mon compte → ID de chaîne
+    const COUNTER_NAME   = "deaths";
+    const IMAGE_BASE_URL = "https://raw.githubusercontent.com/BubuRog/buburog-stream-assets/refs/heads/main/";
+    const REFRESH_INTERVAL = 5000;
+    const img = document.getElementById("death-image");
+    const container = document.getElementById("container");
+    let lastDeaths = -1;
+    function pad(n) { return String(Math.min(Math.max(n, 1), 20)).padStart(2, "0"); }
+    function updateImage(deaths) {
+      if (deaths === lastDeaths) return;
+      // Flash rouge au changement
+      if (lastDeaths !== -1) {
+        container.classList.remove("flash");
+        void container.offsetWidth;
+        container.classList.add("flash");
+      }
+      const newSrc = IMAGE_BASE_URL + pad(deaths) + ".png";
+      img.style.opacity = 0;
+      setTimeout(() => { img.src = newSrc; img.style.opacity = 1; lastDeaths = deaths; }, 400);
+    }
+    async function fetchDeaths() {
+      try {
+        const url = `https://api.streamelements.com/kappa/v2/bot/${CHANNEL_ID}/counters/${COUNTER_NAME}`;
+        const response = await fetch(url, { headers: { "Authorization": `Bearer ${JWT_TOKEN}`, "Accept": "application/json" } });
+        if (!response.ok) return;
+        const data = await response.json();
+        let value = null;
+        if (data.value !== undefined) value = data.value;
+        else if (data.counter !== undefined) value = data.counter;
+        else if (data.count !== undefined) value = data.count;
+        if (value !== null) updateImage(value);
+      } catch (err) { console.error("Erreur réseau :", err); }
+    }
+    fetchDeaths();
+    setInterval(fetchDeaths, REFRESH_INTERVAL);
+  </script>
+</body>
+</html>

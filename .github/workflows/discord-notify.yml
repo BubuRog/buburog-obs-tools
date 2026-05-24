@@ -18,16 +18,23 @@ jobs:
           FILES=$(git diff --name-only HEAD~1 HEAD | grep '\.html\|\.md' | tr '\n' ' ')
           echo "files=$FILES" >> $GITHUB_OUTPUT
 
+      - name: Get commit message
+        id: commit
+        run: |
+          MSG=$(git log -1 --format='%s')
+          echo "message=$MSG" >> $GITHUB_OUTPUT
+
       - name: Send Discord notification
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         run: |
           curl -H "Content-Type: application/json" \
           -d "{
+            \"thread_name\": \"🔄 Mise à jour — ${{ steps.commit.outputs.message }}\",
             \"username\": \"BubuRog Tools\",
             \"embeds\": [{
               \"title\": \"⚔️ Mise à jour OBS Tools\",
-              \"description\": \"**Fichiers modifiés :** ${{ steps.changes.outputs.files }}\n\n[📁 Voir sur GitHub](https://github.com/${{ github.repository }})\",
+              \"description\": \"**Commit :** ${{ steps.commit.outputs.message }}\n**Fichiers modifiés :** ${{ steps.changes.outputs.files }}\n\n[📁 Voir sur GitHub](https://github.com/${{ github.repository }})\",
               \"color\": 8978432,
               \"footer\": { \"text\": \"Clan ROG — Reapers of Glory\" },
               \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"

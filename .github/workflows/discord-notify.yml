@@ -1,0 +1,36 @@
+name: Notify Discord on update
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+
+      - name: Get changed files
+        id: changes
+        run: |
+          FILES=$(git diff --name-only HEAD~1 HEAD | grep '\.html\|\.md' | tr '\n' ' ')
+          echo "files=$FILES" >> $GITHUB_OUTPUT
+
+      - name: Send Discord notification
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          curl -H "Content-Type: application/json" \
+          -d "{
+            \"username\": \"BubuRog Tools\",
+            \"embeds\": [{
+              \"title\": \"⚔️ Mise à jour OBS Tools\",
+              \"description\": \"**Fichiers modifiés :** ${{ steps.changes.outputs.files }}\n\n[📁 Voir sur GitHub](https://github.com/${{ github.repository }})\",
+              \"color\": 8978432,
+              \"footer\": { \"text\": \"Clan ROG — Reapers of Glory\" },
+              \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"
+            }]
+          }" \
+          $DISCORD_WEBHOOK
